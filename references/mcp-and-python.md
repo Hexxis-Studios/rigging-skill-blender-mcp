@@ -8,7 +8,7 @@ Start with a read-only inventory. Then send small, named, bounded edits to the i
 
 A timeout does not prove rollback. Inspect scene state and output receipts before retrying. Long library operations should emit completed-item receipts and resume from validated hashes, not rerun mutations blindly. Do not terminate another Blender instance or unrelated process to recover your job.
 
-Do not execute a scene-resetting historical batch script inside a live MCP session. Factory resets/object-wide deletion belong only in confirmed disposable scenes. Keep the user's Blender open.
+Do not execute a scene-resetting batch script inside a live MCP session. Factory resets/object-wide deletion belong only in confirmed disposable scenes. Keep the user's Blender open.
 
 ## Read-only skin coverage inventory
 
@@ -101,7 +101,7 @@ This is an assignment pattern, not a weight generator or a script to run unadapt
 6. Blend with original destination weights using a bounded patch factor. Preserve original weights at zero factor. Merge duplicate influences before choosing the top supported influences; measure dropped mass, then normalize.
 7. Validate source order/topology, payload hash, transfer distances and candidate skinning. Replay the failed motion and inspect transition seams.
 
-Recorded Data Transfer authoring used the mapping enum `POLYINTERP_NEAREST` in Blender 5.1. Query installed RNA/modifier properties before using it on another version. The BVH method was an independently compared alternative, not guaranteed bit-identical output.
+For nearest-face Data Transfer, inspect the installed RNA/modifier properties; `POLYINTERP_NEAREST` is the mapping enum used in Blender 5.1. Compare BVH results against the chosen reference rather than assuming bit-identical output.
 
 ## Evaluated mesh and action checks
 
@@ -115,10 +115,10 @@ For edge measurements, transform rest and deformed points consistently. Store pe
 
 ## Export and a minimal completion receipt
 
-Discover the actual export operator's properties. Historical FBX flags such as `axis_forward='-Z'`, `axis_up='Y'`, or `add_leaf_bones=False` are starting examples only; they do not prove the correct facing or hierarchy for this target. Preserve requested clip names and existing extra clips unless removal was requested.
+Discover the actual export operator's properties. FBX flags such as `axis_forward='-Z'`, `axis_up='Y'`, or `add_leaf_bones=False` are starting examples only; they do not prove the correct facing or hierarchy for this target. Preserve requested clip names and existing extra clips unless removal was requested.
 
 Keep a compact receipt containing source/candidate/export paths and hashes; Blender version; target mesh/rig names; modified regions; unchanged geometry/UV/skeleton contracts; coverage and influence results; dropped weight; exact motion samples; visual findings; round-trip result; and remaining defects. Mark an intermediate artifact as a candidate until its required checks pass.
 
 ## Scope of these examples
 
-The snippets are reusable adaptations of recorded methods. The coverage inventory is a new diagnostic example; the full assignment pattern derives from the tested BMesh method. Neither is an automatic production rig repair. An agent must inspect its connected Blender version and validate results on the user's model.
+The snippets illustrate inspection and assignment, not automatic rig repair. Adapt them to the connected Blender version, intended objects, and the model's group structure, then validate the resulting deformation.

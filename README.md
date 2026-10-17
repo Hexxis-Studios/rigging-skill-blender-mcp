@@ -1,6 +1,6 @@
 # Blender MCP Character Rigging Skill
 
-A portable skill for Claude and other agents working with Blender MCP. It collects practical character-rigging methods, verified repairs, mistakes, and rejected experiments from real character-authoring work.
+A skill for Claude and other agents rigging characters through Blender MCP. It covers skin weights, deformation diagnosis, safe edits, and visual validation.
 
 **[Read the skill](SKILL.md)** · **[Download the skill ZIP](downloads/blender-mcp-character-rigging.zip?raw=true)**
 
@@ -10,7 +10,7 @@ Download and extract the ZIP, or clone this repository. Give your agent access t
 
 > Read SKILL.md and its linked references. Use this skill to inspect and rig my character through Blender MCP. Diagnose the actual failure, preserve my source, and validate the resulting deformation. Inspect screenshots from front, side, and back, and replay the failing motion before accepting a repair.
 
-The agent needs a working connection to your Blender MCP server to inspect or edit Blender. The skill tells it to discover the available tools rather than assume connector-specific commands. No HexiVerse project files, assets, paid services, or particular game engine are required.
+The agent needs a working connection to your Blender MCP server to inspect or edit Blender. The skill tells it to discover the available tools rather than assume connector-specific commands.
 
 ## What it covers
 
@@ -27,12 +27,10 @@ The agent needs a working connection to your Blender MCP server to inspect or ed
 | File | Purpose |
 | --- | --- |
 | [SKILL.md](SKILL.md) | Main workflow and acceptance checks |
-| [references/lessons.md](references/lessons.md) | Recorded working methods, failures, and evidence limits |
+| [references/lessons.md](references/lessons.md) | Common failures, repair methods, and their limits |
 | [references/mcp-and-python.md](references/mcp-and-python.md) | MCP operation guidance and adaptable Python examples |
 | [downloads/blender-mcp-character-rigging.zip](downloads/blender-mcp-character-rigging.zip?raw=true) | Complete packaged skill |
 
-## Validation and limits
+## Visual inspection
 
-The packaged skill passed skill-format validation, local-reference checks, Python example syntax checks, and ZIP integrity checks. The strongest recorded rigging evidence concerns repairs to existing imported humanoids and garments. This is not a universal automatic rig generator, and the example snippets have not been tested on your character.
-
-Visual inspection instructions are included. Camera placement and screenshot capture use the capabilities of the connected Blender MCP server; there is no bundled universal camera/capture script. A successful autorig response or normalized weights alone do not establish a good rig.
+The skill instructs the agent to inspect front, side, and back views, compare body and clothing separately, and replay failing poses and full motion. Camera placement and screenshot capture use the connected Blender MCP server. A successful autorig response or normalized weights alone do not establish a good rig.

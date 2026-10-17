@@ -1,109 +1,91 @@
-# Recorded rigging lessons
+# Rigging failures and repair decisions
 
-These are distilled observations from character work through October 17, 2026. Accepted means the stated source-specific test passed; it is not a universal guarantee. Rejected means the candidate was removed from accepted assets. Counts document the scope of evidence and are not required test quotas.
+Use symptoms and matched comparisons to choose a repair. A method that improves one garment or pose may regress another; verify the affected surface and intended motion before accepting it.
 
-## Existing humanoid auto-rig repair
+## Hands pulling trousers or hip trim
 
-**Observed:** Resting hands and trousers/hip trim shared incorrect influences. Walking/running pulled clothing toward the hands, sometimes leaving flying fragments.
+Resting hands can sit close enough to the hips for automatic binding to give trouser vertices arm or hand weights. During walking or running, clothing then stretches toward the hand.
 
-**Working method:** Inspect connected components, actual rest joint origins, existing influence families, and garment identity. Remove demonstrably wrong arm/leg influence locally and normalize retained weights. Preserve garment geometry and bone names. Small disconnected fragments needed their own binding review rather than deletion.
+Inspect connected components, rest joint origins, existing influence families, and garment identity. Remove demonstrably wrong arm/leg influence locally and normalize retained weights. Review disconnected trim separately rather than deleting it.
 
-**Important correction:** Imported glTF bone tails were inferred and could extend dozens of metres on scaled rigs. Distance-to-tail heuristics selected wrong bones. Parent/child joint origins were a better anatomical segment source. Leaf endpoints still required a bounded, anatomy-aware decision.
+Imported glTF joints provide origins, not reliable bone lengths. Blender may infer tails that extend far beyond the anatomy. Use parent/child joint origins for anatomical segment reasoning and handle leaves explicitly.
 
-**Additional evidence:** Full-resolution source texture samples helped distinguish trousers from adjacent skin on these particular textured models. Downsampled atlas colors bled across UV islands, and a single median color missed multicolored garments. Texture classification was supplementary source-specific evidence, not a general anatomy detector.
+Texture samples can supplement region identification on suitable textured models. Use the original atlas resolution: downsampling can bleed colors across UV islands. Do not treat color as a general anatomy detector or assume a multicolored garment has one representative color.
 
-**Limits:** Connectivity-based local weight smoothing reduced measured tears in the older humanoid cohort. Nineteen models received sampled-pose and visual review; extra retained emotes were not individually polished. Do not copy its fixed height bands, color thresholds, iteration count, or movement recipe into an unrelated rig.
+## Missing source-authored weights
 
-## Source weight files can be better than a new bind
+Before generating weights, inspect the asset's declared weight files and skeleton references. A converter may have used fallback correspondence despite authored data being available.
 
-**Observed:** A converter omitted declared MakeHuman shoe weight files and used fallback correspondence. Six source shoes already carried authored skinning.
+Verify source topology and bone identity before importing weights. Map unsupported leaf joints to appropriate driven joints deliberately. When source data is absent or incompatible, retain a documented compatible fallback instead of inventing a mapping.
 
-**Working method:** Read each source's declared weight-file reference, verify its source topology and bone map, retain hashes/credits, and map source toe leaves onto the actual driven toe joints. Keep a recorded compatible fallback when source data is absent or incompatible.
+## Garment fins and excessive stretching
 
-**Lesson:** Before autorigging, audit what the asset already supplies. A plausible fallback and valid avatar did not prove natural motion.
+Compare fitted source, pose conversion, ordinary skinning, and final contact/deformation stages. If the source silhouette is intact and disabling downstream contact removes a fin, repair that stage rather than sculpting the source around the artifact.
 
-## Nearest-surface helper binding
+Nearest-face weight transfer from an appropriate deformation helper can improve binding without changing source geometry or UVs. Blender Data Transfer and BVHTree nearest-triangle interpolation are useful alternatives, but do not assume bit-identical results near skinny triangle boundaries. Compare resulting surface positions under deformation as well as weight differences.
 
-**Observed:** Garment fins were much larger after downstream deformation than in the source silhouette. Generic smoothing damaged pleats/fringe.
+Generic Corrective Smooth can damage pleats, fringe, or cuffs while leaving the underlying binding fault. Preserve silhouette details during diagnosis.
 
-**Working method:** Export fitted source and actual helper geometry in the same rest state. Blender Data Transfer nearest-face interpolation authored helper weights without replacing source geometry, UVs, identity, or credits. Retaining the fine contact pass filled sampled skin holes while the new helper binding reduced large fins.
+For large editable meshes, create destination groups first and fill a BMesh deform layer before publishing once. Avoid millions of individual group-add calls. Re-read the assigned weights to verify the operation.
 
-**Evidence:** Initial two-style tests showed the large fringe fin removed and a white-gown fin reduced. Later admission covered 43 styles / 455,138 split vertices with exact source topology/UV/order checks and broader motion views. Hanging sleeves and some running folds were still unfinished.
+## Inner bodysuit bound to an outer skirt helper
 
-**Tooling improvement:** BVHTree nearest triangles and barycentric interpolation completed the larger authoring batch faster than many-group Data Transfer. Retained references showed up to 88.72 micrometres surface discrepancy under the recorded deformation probes. This was not bit-identical, especially near skinny triangle boundaries, and still needed native motion validation. Preserve completed output bytes when resuming.
+A single outfit object can contain an inner bodysuit and disconnected outer skirt. Binding the entire object to one skirt helper can stretch crotch/leg fabric. Inner faces can also contaminate outer-shell ray hits.
 
-**Assignment improvement:** Create all destination group names, fill a BMesh deform layer, and publish once rather than making millions of separate group-add calls. An 11,271-vertex authoring check matched admitted weights exactly. That establishes the assignment operation, not runtime performance.
+Inspect source components using a welded analysis copy where appropriate; preserve production topology and UV seams. Author stable part labels, retain the inner part's original leg rig through fitting and pose conversion, and bind only the outer skirt to its helper. Exclude inner faces from outer-shell helper construction.
 
-## Layered outfits require separate binding regions
+## Local shirt intersections
 
-**Observed:** Ballet/skating garments contained an inner bodysuit and disconnected outer skirt. A garment-wide skirt rule sent crotch/leg fabric to the outer cloth helper. Inner faces also contaminated outer-shell ray hits.
+Match the exact failing clip and phase. Compare body-visible and body-hidden views to establish actual skin penetration before changing weights. Broad shell expansion may hide one intersection while exposing another shoulder.
 
-**Working method:** Inspect welded-analysis source components without welding the production mesh. Author source-stable region labels. Retain the inner part's original leg rig through pose conversion and fitting; bind only the outer skirt to its helper and exclude inner faces from helper construction.
+For a correspondence fault, transfer closest-triangle barycentric body weights in a bounded patch with a smooth transition to original weights. Preserve geometry, UVs, body rig, and visibility masks. When supporting multiple body shapes, compare them before selecting a shared patch.
 
-**Evidence:** Four fits / 1,860 movement frames plus 12 reviewed views removed the skating strip and retained the tutu silhouette. Other layered outfits still need their own region review.
+Changed weights can alter converted T-pose positions even when raw source coordinates remain unchanged. Validate those stages separately. A neckline clearance defect can require a separate geometric repair rather than another weight override.
 
-## Local shirt correspondence can repair a local defect
+## Long hanging sleeves
 
-**Observed:** A default shirt pierced the body in a held dance. Broad collar expansion fixed one view but exposed another shoulder. Per-wall and arm-exclusion variants did not consistently repair it. A different dance used as a test was initially mistaken for the failing clip.
+Neighboring fabric vertices with torso versus forearm ownership can separate severely during A-to-T conversion. Height-only skirt classification can also capture hanging sleeves that need arm influence.
 
-**Working method:** Match the exact clip/phase and use body-on/off controls. Transfer nearest-triangle barycentric skin weights in a bounded central upper-shirt patch, using both relevant fitted source frames, and smoothly retain original weights elsewhere. Preserve source geometry, UVs, body rig and mask.
+Watch for misleading improvements:
 
-**Evidence:** 1,487 of 8,426 source vertices changed. Ten body recipes / 8,278 movement frames and 40 reviewed captures supported this specific repair. Converted T-pose positions changed because weights participate in pose conversion; unchanged raw source positions did not imply unchanged converted positions.
+- Nearest-arm reassignment or geodesic arm/dress regions may reduce the maximum stretch but worsen P99 and many transition edges.
+- Topology-local smoothing may improve a few outliers while spreading damage across an authored seam.
+- Bone heat may leave no unbound vertices yet produce poor folds and body intersections in motion.
+- Keeping more influences cannot fix a defect that persists with every original weight retained.
+- Direct body-surface anchoring may look cleaner in idle but fail walking or running.
 
-**Limits:** This did not authorize whole-wardrobe reweighting. A later older-body neckline defect needed a separate bounded geometric clearance repair, rather than another weight override.
+Compare maximum stretch, P99, severe-edge counts, and inspected motion together. When weight-only repairs repeatedly fail, investigate deliberate sleeve support, drape deformation, and contact rather than repeating the same binding family. These failures do not make automatic weights unsuitable for every other garment.
 
-## Hanging sleeves: rejected approaches, unresolved support
+## Bind changes that pass math but fail motion
 
-**Observed:** In one gown, adjacent source vertices about 12 mm apart carried torso versus forearm influence and separated by about 310 mm during A-to-T conversion. Worst source-stage stretch was about 25.96 times rest. A height-only skirt mask also captured low hanging sleeves.
+Replacing clothes-only bind data can introduce shoulder gaps; replacing body and garment binds together can distort arms and hands if the destination reference pose is incompatible. Passing a matrix round trip does not establish correct skinning.
 
-**Rejected trials:**
+Keep geometry, rest skeleton, bind transforms, and target-avatar reference coherent. A blended pose conversion is not automatically inverted by independently replacing each bone's bind matrix. Inspect the whole animated body after any conversion. If the cause remains unresolved, record that uncertainty rather than claiming a specific helper-bone or blendshape fault.
 
-- Geodesic arm/dress seeds and arm-segment weights reduced the worst stretch to about 20.39 times but worsened P99 to 4.23 times from 1.31 times.
-- A later boundary-led cuff remap worsened P99 to 11.17 times and increased edges above three times rest from 281 to 2,339.
-- Local five-ring discontinuity smoothing improved the maximum but worsened P99 and the number of severe edges.
-- Automatic bone heat left no unbound vertices and improved the maximum to about 7.33 times, yet all six inspected idle/walk/run views retained poor folds/intersections. Numeric fit success was insufficient.
-- Retaining every original influence left the worst stretch unchanged at about 25.95768 times. Influence truncation was therefore not the cause of that worst defect.
-- Direct source-proxy fitting, full source-rest cloth/support variants, and body-surface anchoring did not pass walking/running art. None was accepted as a general garment solution.
+## Hair and headwear following the wrong bones
 
-**Decision:** Do not repeat weight-only smoothing, bone heat, whole-bind swaps, or nearest-arm reassignment as a generic repair of this known drape problem. A new candidate needs deliberately authored support/deformation/contact and matched proof. These observations do not mean bone heat or sleeve regions are unsuitable for every other character.
+Proxy weights may contain eye/facial-helper influences inappropriate for rigid headwear or scalp. Map those regions to the intended head motion while preserving necessary neck transitions and lower drape rigs.
 
-## Bind/rest-pose changes can pass math and fail art
+Long hanging hair may need a restricted nearest-body triangle transfer band. Retain scalp/head binding and loose regions outside that band; transferring an entire hairstyle to the torso creates a different error.
 
-**Observed:** Clothes-only source A-pose bind restoration passed numeric motion checks but introduced shoulder holes. Restoring body and skins together passed matrix/fit checks but made animated arms/hands stretch and fan out. All inspected body-art views failed.
+Use local source joints for regional thresholds. Unnecessary world-space round trips introduce small numeric changes that can break exact restoration. Test accessory removal at the same neutral orientation and confirm the original hairstyle is restored.
 
-**Decision:** Both were rolled back. The exact incompatibility with that generated Humanoid pipeline was unresolved. Do not invent a proven helper-bone or blendshape cause. Do not present the rejected source-bind swap as a recipe for repairing all A-to-T rigs.
+## Other faults that resemble bad weights
 
-**General lesson:** Keep geometry, rest skeleton, bind transforms, and target-avatar reference coherent. A blended pose conversion is not automatically inverted by independently replacing each bone's bind matrix. Validate the entire animated body after a conversion, not only cloth distances.
+- **Curved torso clearance:** A pelvis-centered radial rule can push upper-back fabric into the body. Fit against actual central torso sections or local surface geometry and include hidden skin.
+- **Retarget reference:** Generating a bind reference from a posed animation-only FBX can produce sideways feet or mismatched wrists. Preserve the publisher's actual reference and hierarchy settings. A model from the same package is not automatically compatible; retain an explicit auto-created reference when that is the source's intended setup.
+- **BVH axes:** Correct Euler order and bone lengths do not prove correct pose. Check the loader's up-axis conversion and the order of handedness/rest-frame conversion against the original source pose.
+- **Repeated refits:** Old animated local bone scales can survive hierarchy rebuilding and expand a body. Restore authored scales and old bindings through the actual refit lifecycle; repeat edits on the same instance.
+- **Foot IK:** Permanent planted-contact weight can flatten authored foot flight. Inspect contact ownership before changing leg anatomy or source weights.
+- **Source semantics:** A planted-foot upper-body dance should not fail a test merely because it contains no steps. Inspect the original motion before specifying movement expectations.
+- **Normals:** Dark punctures can come from invalid or zeroed tiny-area normals rather than skinning. Inspect evaluated geometry and normals before rebinding.
+- **Stale captures:** A screenshot can show the previous pose or an unsettled animation state. Verify evaluated time and orientation before judging the rig.
 
-## Hair/headwear skinning
+## Further reading
 
-**Observed:** Proxy hat/scalp weights included eye/facial helpers. Long hanging hair intersected clothing when its entire shape followed only the head.
-
-**Working method:** Map scalp/rigid headwear to the intended head with a bounded lower neck transition. For nearby hanging hair, use a restricted nearest-body triangle transfer band and retain the scalp and loose regions outside it. Actual head/body shell fitting is separate from weight ownership.
-
-**Evidence:** Headwear controls included exact hairstyle restoration after removal; hair validation covered 52 styles on two frames plus selected age/coat cases and 248 inspected views. This does not certify every long-hair animation.
-
-**Precision lesson:** Use local source joints for regional thresholds. A world-space round trip at a translated/rotated studio position changed 286 weights by up to 2.384e-7 and broke exact-restoration comparison. Compare the same neutral orientation and avoid unnecessary coordinate conversions.
-
-## Failures outside weights that masqueraded as bad rigging
-
-- **Runtime contact:** Source/converted silhouettes were intact; contact-off views removed fins while exposing penetration. Sculpting the source would have hidden the wrong stage's fault.
-- **Torso fitting:** A pelvis-centered radial clearance rule pushed curved upper-back fabric into the body. Height-dependent fitted central skin sections fixed the sampled backs. It was not missing source geometry or lower-helper weighting.
-- **Retarget reference:** Discarding a publisher's source-avatar dependency and generating a reference from an animation-only FBX caused sideways feet and mismatched wrists. Restore the actual publisher reference/hierarchy settings. Another package intentionally used an auto-created reference; substituting a same-package model introduced a roughly two-metre offset. Preserve explicit source configuration rather than always forcing a shared avatar.
-- **BVH axes:** Euler agreement and bone-length checks passed while the actual yoga pose was wrong. The official loader's automatic Z-up conversion had been omitted before mirror/rest conversion. Corrected output matched the source loader and visible pose.
-- **Repeated refits:** Old animated local bone scales survived hierarchy rebuilding and expanded otherwise valid bodies. Reset authored scales/old bindings as part of the actual refit lifecycle, then repeat edits on the same instance.
-- **Foot IK:** Permanent contact weight flattened authored foot flight. Release/reapply contact based on the intended motion and support; do not reshape legs to hide an IK fault.
-- **Source semantics:** A planted-foot upper-body dance was mistakenly tested as a stepping dance. Compare the original source before demanding movement it never contained.
-- **Normals:** Dark facial punctures came from valid tiny-area normals being normalized to zero, not skinning. Inspect evaluated geometry/normals before rebinding or changing anatomy.
-- **Stale evidence:** Offscreen or same-call engine captures sometimes showed a stale pose. Let actual animation frames settle and verify recorded time/orientation. A good rig cannot be judged from the wrong frame.
-
-## Evidence provenance
-
-The extraction used project handoff/source-cleanup records, the character-authoring skill references, Blender authoring/validation scripts, and October 15–17 garment, shirt, headwear and hair validation reports. No private models, source archives, machine paths, save files, or project code are required by this portable skill. It contains distilled workflow guidance rather than copies of those assets.
-
-Primary references recorded during that work, for optional further reading (version-specific APIs still require live inspection):
+Check documentation against the installed software version:
 
 - [MakeHuman matching groups and trumpet sleeves](https://static.makehumancommunity.org/assets/creatingassets/makeclothes/makeclothes_vertexgroups.html)
 - [MakeHuman clothing construction](https://static.makehumancommunity.org/assets/creatingassets/makeclothes/clothes.html)
-- [Blender Data Transfer documentation used in the investigation](https://docs.blender.org/manual/id/5.0/modeling/modifiers/modify/data_transfer.html)
-- [Unity bind-pose contract, if Unity is the target](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh-bindposes.html)
+- [Blender Data Transfer](https://docs.blender.org/manual/id/5.0/modeling/modifiers/modify/data_transfer.html)
+- [Unity bind-pose contract, when Unity is the destination](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mesh-bindposes.html)

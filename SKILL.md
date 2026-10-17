@@ -7,7 +7,7 @@ description: Rig and repair character models through Blender MCP, including arma
 
 Produce an editable rig that deforms correctly in the requested motions. A created armature, successful parenting operation, normalized weights, or valid game-engine avatar is an intermediate result, not rig acceptance.
 
-This skill distills recorded character-repair work. Its strongest evidence concerns repairing existing imported humanoid rigs and clothing, not a universal from-scratch autorigger. Blender Python, headless authoring, and target-engine tests supplied much of that evidence; MCP is the transport for applying the workflow, not evidence that a particular connector command works. Discover the connected server rather than assuming tool names. No other skill, project files, paid service, or particular engine is required.
+Use this workflow to bind characters and repair existing humanoid rigs, clothing, and hair. Discover the connected Blender MCP server's inspection, Python execution, and screenshot capabilities rather than assuming tool names. Choose the binding method for the model's anatomy and intended motions.
 
 Read [references/lessons.md](references/lessons.md) before choosing a repair; it separates working methods from rejected experiments. For MCP execution and reusable Python patterns, read [references/mcp-and-python.md](references/mcp-and-python.md).
 
@@ -24,7 +24,7 @@ Inspect before editing:
 
 Reuse a suitable existing rig and authored skin. Do not rebuild the skeleton merely because an automatic tool is available. Preserve bone names and clip identifiers used by downstream consumers. For a new skeleton, place joints from the actual anatomy and establish the destination's rest-pose contract before binding; do not copy another model's absolute joint coordinates.
 
-Save recoverable source work, then use a named candidate collection/file. Keep one or two verified restore points and small change receipts rather than a new whole-project copy per trial. Never clear a live scene. An explicitly disposable headless scene may be reset. Do not overwrite the accepted source during an experiment.
+Save recoverable source work, then use a named candidate collection/file. Keep a verified checkpoint and a concise record of changes. Never clear a live scene. An explicitly disposable headless scene may be reset. Do not overwrite the accepted source during an experiment.
 
 ## 2. Reproduce and isolate the failure
 
@@ -58,15 +58,15 @@ Transfer from a compatible body surface or deformation helper in a common coordi
 
 Nearest triangle plus barycentric interpolation is a useful starting method: interpolate the three source vertices' weight dictionaries, merge contributions by bone name, blend into the bounded destination patch, enforce the target's influence budget, and renormalize. Reject or explicitly handle missing hits and degenerate triangles. Check transfer distance against this model's scale. Do not blindly assign nearest-vertex weights across a sleeve/torso boundary.
 
-For fitted clothing, sample the relevant full body, including hidden skin. Body visibility masks are not fitting geometry. A verified local upper-shirt repair combined correspondence from two fitted body frames; that averaging is a source-specific technique, not a requirement for other characters.
+For fitted clothing, sample the relevant full body, including hidden skin. Body visibility masks are not fitting geometry. If the same garment must support multiple body shapes, compare local correspondence across those shapes before choosing shared weights.
 
-If truncating influences, record discarded mass before renormalization. Four was a project/runtime limit, not a universal Blender limit. A normalized result can still have lost important influence.
+If truncating influences, record discarded mass before renormalization. Use the destination's actual influence limit; do not assume four. A normalized result can still have lost important influence.
 
 ### Skirts, robes, and hanging sleeves
 
 Use deliberate support/deformation for free fabric. A skirt helper may be appropriate for an outer skirt; retain original torso/arm skinning and separately rig an inner bodysuit. Identify regions from source topology and anatomy, not height alone. Exclude inner-body faces from outer-shell helper construction.
 
-Do not assume a long trumpet sleeve can be fixed by replacing its weights with nearest-arm weights. Actual trials reduced the worst stretch but worsened many other edges and failed motion art. This remains a case for deliberate sleeve/drape support and contact, with a new local proof before rollout.
+Do not assume a long trumpet sleeve can be fixed by replacing its weights with nearest-arm weights. That can reduce the worst stretch while worsening many other edges. Evaluate deliberate sleeve/drape support and contact when local weight repairs fail the full motion test.
 
 ### Hair and headwear
 
@@ -79,7 +79,7 @@ Mesh coordinates, bone rest matrices, skin bind transforms, and object transform
 - Imported glTF joints supply joint origins; Blender may infer misleading bone tails. Use parent/child joint origins for anatomical segment reasoning, in the same space as mesh positions. Handle leaves explicitly.
 - Reset old pose/action influences before judging neutral anatomy or rebinding. A detached action does not necessarily remove NLA, drivers, constraints, or nonidentity pose transforms.
 - Changing A-pose to T-pose can change vertex positions when weights change, even if source coordinates are unchanged. Compare source geometry and converted geometry as separate invariants.
-- A matrix round trip passing does not establish visually correct deformation. Source-bind substitutions passed mathematical/numeric checks yet severely distorted animated arms/hands in the recorded engine pipeline; they were rejected, not promoted as a general fix.
+- A matrix round trip passing does not establish visually correct deformation. A source-bind substitution can pass mathematical checks yet distort animated arms/hands when it conflicts with the destination reference pose. Inspect the full body after conversion.
 - When retargeting, preserve the publisher's actual bind reference and hierarchy settings. Same bone names or a model from the same package do not prove the same reference pose.
 - For BVH, inspect the loader's real up-axis conversion and the order of any handedness conversion/rest-frame conjugation. Euler-order agreement alone missed a wrong source pose.
 
@@ -101,7 +101,7 @@ Motion checks:
 - Inspect body and clothing together and separately, including back views and silhouette details. Preserve pleats, fringe, cuffs, soles, palms, and layered ordering.
 - For configurable avatars, include representative frame/age/proportion extremes and repeated edits on the same instance. Old bone scales surviving a rebuild caused repeated-edit growth that fresh-instance checks missed.
 
-Do not universalize historical thresholds such as 0.15 m edge expansion or fixed body-height bands. Choose tolerances for the model's units, size, topology, and intended motion. Near-zero rest edges need separate handling before computing ratios.
+Choose tolerances for the model's units, size, topology, and intended motion rather than copying fixed distance or body-height thresholds. Near-zero rest edges need separate handling before computing ratios.
 
 Export only the intended mesh, skeleton, and requested clips. Query the installed exporter options. Reimport into a disposable scene/process and verify facing, scale, rig, materials, clips and deformations. UV/normal seams may split vertices on round trip, so compare triangles and mapped attributes rather than raw vertex count alone. When an engine is the delivery target, test that imported asset with its actual retargeting/controller before claiming engine readiness.
 
